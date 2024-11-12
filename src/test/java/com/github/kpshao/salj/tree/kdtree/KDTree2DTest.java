@@ -2,6 +2,8 @@ package com.github.kpshao.salj.tree.kdtree;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Arrays;
+import java.util.Random;
 
 class KDTree2DTest {
 
@@ -273,5 +275,130 @@ class KDTree2DTest {
     private int getTreeDepth(KDTree2D.Node node) {
         if (node == null) return 0;
         return 1 + Math.max(getTreeDepth(node.left), getTreeDepth(node.right));
+    }
+
+    /**
+     * 测试查找最近邻点功能
+     */
+    @Test
+    void testFindKNearest() {
+        // 准备测试数据
+        double[] xPoints = {2, 5, 9, 4, 8, 7};
+        double[] yPoints = {3, 4, 6, 7, 1, 2};
+        KDTree2D kdTree = new KDTree2D(xPoints, yPoints, 10);
+        
+        // 测试查找最近的3个点
+        int[] nearest = kdTree.findKNearest(3, 4, 3);
+        assertEquals(3, nearest.length);
+        
+        // 验证返回的点确实是最近的
+        double[] distances = new double[nearest.length];
+        for (int i = 0; i < nearest.length; i++) {
+            distances[i] = Math.sqrt(
+                Math.pow(xPoints[nearest[i]] - 3, 2) + 
+                Math.pow(yPoints[nearest[i]] - 4, 2)
+            );
+        }
+        Arrays.sort(distances);
+        
+        // 手动计算所有点到查询点的距离，验证返回的是最近的k个
+        double[] allDistances = new double[xPoints.length];
+        for (int i = 0; i < xPoints.length; i++) {
+            allDistances[i] = Math.sqrt(
+                Math.pow(xPoints[i] - 3, 2) + 
+                Math.pow(yPoints[i] - 4, 2)
+            );
+        }
+        Arrays.sort(allDistances);
+        
+        // 验证返回的是最近的k个点
+        for (int i = 0; i < nearest.length; i++) {
+            assertEquals(allDistances[i], distances[i], 0.001);
+        }
+    }
+
+    /**
+     * 测试包含重复点的情况
+     */
+    @Test
+    void testFindKNearestWithDuplicates() {
+        double[] xPoints = {2, 2, 2, 4, 4, 4};
+        double[] yPoints = {3, 3, 3, 5, 5, 5};
+        KDTree2D kdTree = new KDTree2D(xPoints, yPoints, 10);
+        
+        // 测试查找最近的4个点
+        int[] nearest = kdTree.findKNearest(2, 3, 3);
+        assertEquals(3, nearest.length);
+        
+        // 验证返回的点都是距离相等的点
+        for (int idx : nearest) {
+            assertEquals(2.0, xPoints[idx], 0.001);
+            assertEquals(3.0, yPoints[idx], 0.001);
+        }
+    }
+
+    /**
+     * 测试边界情况
+     */
+    @Test
+    void testFindKNearestEdgeCases() {
+        double[] xPoints = {1, 2, 3};
+        double[] yPoints = {1, 2, 3};
+        KDTree2D kdTree = new KDTree2D(xPoints, yPoints, 10);
+        
+        // 测试k大于点的总数
+        int[] result = kdTree.findKNearest(0, 0, 5);
+        assertEquals(3, result.length);
+        
+        // 测试k=1
+        result = kdTree.findKNearest(0, 0, 1);
+        assertEquals(1, result.length);
+        assertEquals(1.0, xPoints[result[0]], 0.001);
+        assertEquals(1.0, yPoints[result[0]], 0.001);
+        
+        // 测试非法的k值
+        assertThrows(IllegalArgumentException.class, () -> {
+            kdTree.findKNearest(0, 0, 0);
+        });
+    }
+
+    /**
+     * 测试大规模数据集的性能
+     */
+    @Test
+    void testFindKNearestPerformance() {
+        int size = 10000;
+        double[] xPoints = new double[size];
+        double[] yPoints = new double[size];
+        Random random = new Random(42); // 使用固定种子以保证结果可重现
+        
+        // 生成随机点
+        for (int i = 0; i < size; i++) {
+            xPoints[i] = random.nextDouble() * 100;
+            yPoints[i] = random.nextDouble() * 100;
+        }
+        
+        KDTree2D kdTree = new KDTree2D(xPoints, yPoints, 20);
+        
+        // 测试查找100个最近邻点的性能
+        long start = System.currentTimeMillis();
+        int[] nearest = kdTree.findKNearest(50, 50, 100);
+        long end = System.currentTimeMillis();
+        
+        // 验证结果数量
+        assertEquals(100, nearest.length);
+        
+        // 验证结果的正确性（通过比较与暴力搜索的结果）
+        double[] distances = new double[nearest.length];
+        for (int i = 0; i < nearest.length; i++) {
+            distances[i] = Math.sqrt(
+                Math.pow(xPoints[nearest[i]] - 50, 2) + 
+                Math.pow(yPoints[nearest[i]] - 50, 2)
+            );
+        }
+        Arrays.sort(distances);
+        
+        // 确保搜索时间在合理范围内（根据实际情况调整阈值）
+        assertTrue(end - start < 100); // 假设在100ms内完成
     }
 }

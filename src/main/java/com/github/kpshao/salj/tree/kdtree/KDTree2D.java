@@ -1,6 +1,7 @@
 package com.github.kpshao.salj.tree.kdtree;
 
 import java.util.Arrays;
+import java.util.PriorityQueue;
 
 public class KDTree2D {
     private double[] xPoints, yPoints;
@@ -57,8 +58,8 @@ public class KDTree2D {
         // 使用三路划分找到中位数区间
         int mid = (start + end) / 2;
         int[] equalRange = quickSelect(indices, start, end, mid, useX);
-        int leftEnd = equalRange[0] - 1;
-        int rightStart = equalRange[1] + 1;
+        int leftEnd = mid-1;
+        int rightStart = mid + 1;
         
         // 创建当前节点，包含所有相等的值
         // int[] currentIndices = Arrays.copyOfRange(indices, equalRange[0], equalRange[1] + 1);
@@ -184,5 +185,107 @@ public class KDTree2D {
         int temp = indices[i];
         indices[i] = indices[j];
         indices[j] = temp;
+    }
+
+    /**
+     * 查找距离目标点(x,y)最近的k个点的索引
+     * @param x 目标点x坐标
+     * @param y 目标点y坐标
+     * @param k 需要返回的最近点数量
+     * @return 返回k个最近点的索引数组，按照距离从近到远排序
+     * @throws IllegalArgumentException 当k <= 0时抛出
+     */
+    public int[] findKNearest(double x, double y, int k) {
+        if (k <= 0) {
+            throw new IllegalArgumentException("k必须大于0");
+        }
+        if (k > xPoints.length) {
+            k = xPoints.length;
+        }
+        
+        // 使用优先队列存储k个最近的点，按距离从大到小排序（最大堆）
+        // 队列中存储的是点的索引和到目标点的距离
+        PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> {
+            double distA = squareDistance(x, y, xPoints[a[0]], yPoints[a[0]]);
+            double distB = squareDistance(x, y, xPoints[b[0]], yPoints[b[0]]);
+            return Double.compare(distB, distA);  // 最大堆，距离最大的在堆顶
+        });
+        
+        // 递归搜索k个最近的点
+        searchKNearest(root, x, y, k, pq);
+        
+        // 构建结果数组，由于优先队列是最大堆，需要倒序存储以保证结果按距离从近到远排序
+        int[] result = new int[pq.size()];
+        int i = result.length - 1;
+        while (!pq.isEmpty()) {
+            result[i] = pq.poll()[0];
+            i--;
+        }
+        return result;
+    }
+
+    /**
+     * 递归搜索k个最近的点
+     * @param node 当前节点
+     * @param x 目标点x坐标
+     * @param y 目标点y坐标
+     * @param k 需要查找的点数
+     * @param pq 存储最近k个点的优先队列
+     */
+    private void searchKNearest(Node node, double x, double y, int k, PriorityQueue<int[]> pq) {
+        if (node == null) return;
+        
+        // 根据节点深度决定使用x还是y坐标进行比较
+        boolean useX = (node.depth % 2 == 0);
+        double nodeValue = useX ? xPoints[node.index[0]] : yPoints[node.index[0]];
+        double searchValue = useX ? x : y;
+        
+        // 处理当前节点中的所有点
+        for (int idx : node.index) {
+            double dist = squareDistance(x, y, xPoints[idx], yPoints[idx]);
+            
+            // 如果队列未满或当前点比队列中最远的点更近，则更新队列
+            if (pq.size() < k) {
+                pq.offer(new int[]{idx});
+            } else if (dist < squareDistance(x, y, xPoints[pq.peek()[0]], yPoints[pq.peek()[0]])) {
+                pq.poll();  // 移除最远的点
+                pq.offer(new int[]{idx});  // 添加当前点
+            }
+        }
+        
+        // 如果是叶子节点，直接返回
+        if (node.left == null && node.right == null) {
+            return;
+        }
+        
+        // 决定先搜索哪个子树
+        Node first = searchValue < nodeValue ? node.left : node.right;
+        Node second = searchValue < nodeValue ? node.right : node.left;
+        
+        // 递归搜索更可能包含近邻的子树
+        searchKNearest(first, x, y, k, pq);
+        
+        // 判断是否需要搜索另一个子树
+        // 计算查询点到分割线的距离
+        double splitDist = useX ? (x - nodeValue) * (x - nodeValue) : (y - nodeValue) * (y - nodeValue);
+        
+        // 如果队列未满，或者到分割线的距离小于等于当前k个点中的最大距离，则需要搜索另一个子树
+        if (pq.size() < k || splitDist <= squareDistance(x, y, xPoints[pq.peek()[0]], yPoints[pq.peek()[0]])) {
+            searchKNearest(second, x, y, k, pq);
+        }
+    }
+
+    /**
+     * 计算两点间距离的平方
+     * @param x1 第一个点的x坐标
+     * @param y1 第一个点的y坐标
+     * @param x2 第二个点的x坐标
+     * @param y2 第二个点的y坐标
+     * @return 两点间距离的平方
+     */
+    private double squareDistance(double x1, double y1, double x2, double y2) {
+        double dx = x1 - x2;
+        double dy = y1 - y2;
+        return dx * dx + dy * dy;
     }
 }
