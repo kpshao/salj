@@ -10,7 +10,7 @@ public class KDTree2D {
 
     private final Node root;
 
-    public Node getRoot() {
+    Node getRoot() {
         return root;
     }
 
@@ -48,7 +48,6 @@ public class KDTree2D {
         }
         
         // 如果点数小于阈值，直接作为叶子节点
-        int pointCount = end - start + 1;
         if (depth >= maxDepth - 1) {
             return new Node(Arrays.copyOfRange(indices, start, end + 1), depth);
         }
