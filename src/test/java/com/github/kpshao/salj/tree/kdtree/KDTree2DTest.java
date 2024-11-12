@@ -194,14 +194,10 @@ class KDTree2DTest {
     @Test
     void testEdgeCases() {
         // 测试空数组
-        assertThrows(IllegalArgumentException.class, () -> {
-            new KDTree2D(null, new double[0], 10);
-        });
+        assertThrows(IllegalArgumentException.class, () -> new KDTree2D(null, new double[0], 10));
         
         // 测试长度不匹配的数组
-        assertThrows(IllegalArgumentException.class, () -> {
-            new KDTree2D(new double[1], new double[2], 10);
-        });
+        assertThrows(IllegalArgumentException.class, () -> new KDTree2D(new double[1], new double[2], 10));
         
         // 测试单个点
         double[] xPoints = {1};
@@ -357,9 +353,7 @@ class KDTree2DTest {
         assertEquals(1.0, yPoints[result[0]], 0.001);
         
         // 测试非法的k值
-        assertThrows(IllegalArgumentException.class, () -> {
-            kdTree.findKNearest(0, 0, 0);
-        });
+        assertThrows(IllegalArgumentException.class, () -> kdTree.findKNearest(0, 0, 0));
     }
 
     /**
@@ -389,14 +383,14 @@ class KDTree2DTest {
         assertEquals(100, nearest.length);
         
         // 验证结果的正确性（通过比较与暴力搜索的结果）
-        double[] distances = new double[nearest.length];
-        for (int i = 0; i < nearest.length; i++) {
-            distances[i] = Math.sqrt(
-                Math.pow(xPoints[nearest[i]] - 50, 2) + 
-                Math.pow(yPoints[nearest[i]] - 50, 2)
-            );
-        }
-        Arrays.sort(distances);
+//        double[] distances = new double[nearest.length];
+//        for (int i = 0; i < nearest.length; i++) {
+//            distances[i] = Math.sqrt(
+//                Math.pow(xPoints[nearest[i]] - 50, 2) +
+//                Math.pow(yPoints[nearest[i]] - 50, 2)
+//            );
+//        }
+//        Arrays.sort(distances);
         
         // 确保搜索时间在合理范围内（根据实际情况调整阈值）
         assertTrue(end - start < 100); // 假设在100ms内完成

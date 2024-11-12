@@ -4,10 +4,11 @@ import java.util.Arrays;
 import java.util.PriorityQueue;
 
 public class KDTree2D {
-    private double[] xPoints, yPoints;
+    private final double[] xPoints;
+    private final double[] yPoints;
     private int maxDepth = 10;
 
-    private Node root;
+    private final Node root;
 
     public Node getRoot() {
         return root;
@@ -145,16 +146,6 @@ public class KDTree2D {
      * 从数组的起始、中间、结束位置选择三个元素，返回其中值的索引位置
      * 这种方法可以避免在已经排序或接近排序的数组上出现最差性能
      * 
-     * 例如对于数组：
-     * indices = [0,1,2,3,4,5,6]
-     * xPoints = [8,1,5,3,7,2,4]
-     * 
-     * 如果 a=0,b=3,c=6：
-     * va = xPoints[indices[0]] = 8
-     * vb = xPoints[indices[3]] = 3
-     * vc = xPoints[indices[6]] = 4
-     * 返回索引3，因为3是8,3,4中的中值
-     * 
      * @param indices 索引数组
      * @param a 第一个位置的索引（通常是起始位置）
      * @param b 第二个位置的索引（通常是中间位置）
@@ -247,9 +238,12 @@ public class KDTree2D {
             // 如果队列未满或当前点比队列中最远的点更近，则更新队列
             if (pq.size() < k) {
                 pq.offer(new int[]{idx});
-            } else if (dist < squareDistance(x, y, xPoints[pq.peek()[0]], yPoints[pq.peek()[0]])) {
-                pq.poll();  // 移除最远的点
-                pq.offer(new int[]{idx});  // 添加当前点
+            } else {
+                assert pq.peek() != null;
+                if (dist < squareDistance(x, y, xPoints[pq.peek()[0]], yPoints[pq.peek()[0]])) {
+                    pq.poll();  // 移除最远的点
+                    pq.offer(new int[]{idx});  // 添加当前点
+                }
             }
         }
         
